@@ -1,0 +1,166 @@
+:root {
+    --primary-color: rgb(255 0 236 / 77%);
+    --primary-hover: rgb(255 0 236 / 90%);
+    --text-color: #fff;
+    --panel-bg: rgba(255, 255, 255, 0.15);
+    --back-btn-bg: rgba(0, 0, 0, 0.3);
+    --input-focus-color: #0d6efd; 
+}
+body {
+    margin: 0;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+    background-size: 300% 300%;
+    animation: gradientMove 10s ease infinite;
+    font-family: 'Poppins', sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+@keyframes gradientMove {
+    0% {background-position: 0% 50%;}
+    50% {background-position: 100% 50%;}
+    100% {background-position: 0% 50%;}
+}
+
+.panel {
+    display: none;
+    width: 90%; 
+    max-width: 1200px; 
+    background: var(--panel-bg);
+    backdrop-filter: blur(15px);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+    color: var(--text-color);
+    opacity: 0;
+    transform: scale(0.98);
+    transition: opacity 0.4s ease-out, transform 0.4s ease-out;
+}
+
+.active {
+    display: block;
+    opacity: 1;
+    transform: scale(1);
+}
+
+.header { text-align: center; margin-bottom: 20px; }
+.header h2 { font-weight: 600; color: var(--text-color); }
+
+.btn-custom {
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 25px;
+    padding: 10px 25px;
+    font-weight: 500;
+    border: none;
+    transition: 0.3s;
+    cursor: pointer;
+    display: inline-block;
+    text-align: center;
+}
+.btn-custom:hover {
+    background-color: var(--primary-hover);
+    transform: scale(1.05);
+}
+.btn-custom:focus {
+    outline: 3px solid rgba(255, 0, 236, 0.5);
+    box-shadow: 0 0 0 0.25rem rgba(255, 0, 236, 0.25);
+}
+
+.back-btn {
+    background-color: var(--back-btn-bg);
+    color: white;
+    border-radius: 25px;
+    padding: 5px 20px;
+    float: right;
+    border: none;
+    transition: background-color 0.2s;
+}
+.back-btn:hover {
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.section { display: none; }
+.section.active-section { display: block; }
+.card {
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* List scrolling style fix */
+#subjectList, #teacherList {
+    list-style: none;
+    padding-left: 0;
+    max-height: 200px; 
+    overflow-y: auto; 
+    margin-bottom: 1rem;
+}
+#subjectList li, #teacherList li {
+    padding: 8px 15px;
+    margin-bottom: 5px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border-left: 3px solid var(--primary-color);
+}
+
+.subject-checkbox { margin-right: 10px; }
+
+/* Custom form styling */
+.form-control, .form-select {
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+}
+.form-control::placeholder { color: rgba(255, 255, 255, 0.6); }
+
+/* Clean focus/filled states */
+.form-control:focus, .form-select:focus {
+    background: rgba(255, 255, 255, 0.15); 
+    border-color: var(--input-focus-color); 
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25); 
+    color: #fff; 
+}
+.form-control:not(:placeholder-shown) {
+    background-color: rgba(255, 255, 255, 0.15); 
+    color: white; 
+}
+
+.form-select option {
+    color: #000;
+    background-color: #fff;
+}
+.form-select option:first-child {
+    color: grey;
+}
+
+.table-bordered {
+    border-color: rgba(255, 255, 255, 0.3) !important;
+}
+.table-bordered > :not(caption) > * > * {
+    border-color: rgba(255, 255, 255, 0.2);
+}
+.table-bordered thead tr, .table-bordered tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+/* Timetable specific styling for responsiveness */
+.table-responsive .table {
+    min-width: 900px; 
+}
+.table-responsive .table th, 
+.table-responsive .table td {
+    white-space: nowrap; 
+    font-size: 0.85em;   
+    padding: 0.5rem;    
+}
+#loadingIndicator {
+    display: none;
+    color: #fff;
+    margin-top: 20px;
+    font-weight: 500;
+}
