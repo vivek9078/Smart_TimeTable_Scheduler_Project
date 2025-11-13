@@ -1,3 +1,5 @@
+// --- backend.js (FULL FIXED CODE) ---
+
 // --- LOCAL STORAGE SETUP ---
 const LOCAL_STORAGE_DATA_KEY = 'SmartSchedulerData';
 const LAST_EDITED_COURSE_KEY = 'lastEditedCourseId';
@@ -284,7 +286,7 @@ const LAB_SLOT_SIZE = 2;
 /**
  * generateTimetable:
  * - Returns an object:
- *   { sections: [..], <sectionName>: { Mon: [...], ... }, teacherSchedules: { teacherName: { Mon: [...], ... } } }
+ * { sections: [..], <sectionName>: { Mon: [...], ... }, teacherSchedules: { teacherName: { Mon: [...], ... } } }
  */
 function generateTimetable(courseData) {
     const sectionLabels = courseData.sectionNames.slice();
@@ -598,28 +600,43 @@ window.handleGenerateTimetable = async function () {
     const courseBranch = courseBranchInput.value;
     const semester = semesterInput.value;
 
+    // 1. Clear previous timetable data regardless of input status
+    document.getElementById("sectionTabs").innerHTML = "";
+    document.getElementById("sectionTabContent").innerHTML = "";
+    document.getElementById("downloadButtonsContainer").innerHTML = `
+        <button class="btn-custom w-100 mt-3" onclick="downloadTimetable()">⬇ Download Timetable (All Sections)</button>
+        <button class="btn-custom w-100 mt-2" onclick="downloadTeacherTimetable()">⬇ Download Timetable (All Teachers)</button>
+    `;
+
+    // 2. CHECK FOR MISSING INPUTS FIRST
     if (!courseBranch || !semester) {
+        // Correctly show error status if required fields are empty
+        loadingIndicator.style.display = 'none'; // Hide loading bar if visible
         timetableStatus.textContent = "Please enter the Course/Branch and Semester.";
-        return;
+        return; // Exit function early
     }
 
+    // 3. SEARCH FOR DATA AND SET LOADING STATE
     const selectedCourseData = allCoursesData.find(c =>
         c.courseBranch === courseBranch &&
         c.semester.toString() === semester.toString()
     );
 
     if (!selectedCourseData) {
+        // Show error status if data is not found
+        loadingIndicator.style.display = 'none';
         timetableStatus.textContent = `Error: No course data found for ${courseBranch}, Semester ${semester}.`;
-        return;
+        return; // Exit function early
     }
 
+    // If data is found, show loading state and proceed
     loadingIndicator.style.display = 'block';
     timetableStatus.textContent = `Generating Timetables...`;
 
     // small wait so UI updates
     await new Promise(r => setTimeout(r, 400));
 
-    // Generate
+    // 4. GENERATE AND RENDER
     generatedTimetables = generateTimetable(selectedCourseData);
 
     // Render
@@ -628,26 +645,8 @@ window.handleGenerateTimetable = async function () {
         loadingIndicator.style.display = 'none';
         timetableStatus.textContent = `✅ Timetables generated for ${generatedTimetables.sections.length} sections.`;
 
-        // === Ensure single teacher download button ===
-        let teacherBtn = document.getElementById('downloadTeachersBtn');
-        if (!teacherBtn) {
-            teacherBtn = document.createElement('button');
-            teacherBtn.id = 'downloadTeachersBtn';
-            teacherBtn.className = 'btn-custom w-100 mt-2';
-            teacherBtn.innerText = '⬇ Download Timetable (All Teachers)';
-            teacherBtn.onclick = downloadTeacherTimetable;
-
-            // Insert directly BELOW the section download button, not appended at the end of card
-            const sectionBtn = document.querySelector('button[onclick="downloadTimetable()"]');
-            if (sectionBtn && sectionBtn.parentNode) {
-                sectionBtn.insertAdjacentElement('afterend', teacherBtn);
-            } else {
-                // fallback: attach to admin card if section button missing
-                timetableStatus.parentElement.appendChild(teacherBtn);
-            }
-        }
     } else {
         loadingIndicator.style.display = 'none';
-        timetableStatus.textContent = `Error: Could not generate a valid timetable.`;
+        timetableStatus.textContent = `Error: Could not generate a valid timetable. (Check HOD inputs: subjects/teachers).`;
     }
 };
