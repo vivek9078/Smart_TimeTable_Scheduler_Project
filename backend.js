@@ -253,25 +253,27 @@ async function loadAdminOptions() {
   allCoursesData = [];
 
   const rows = await fetchCoursesFromServer();
-  rows.forEach(r => {
-    // readable display text in datalist option (keeps spaces for readability)
-    const display = `${r.course_name} - ${r.branch_name}`;
 
-    // normalized variant used for matching
-    const courseBranchNorm = normalizeCourseBranch(`${r.course_name}-${r.branch_name}`);
+  rows.forEach(r => {
+    console.log("🚩 LOADED FROM DB:", r.course_name, r.branch_name, r.semester);
+
+    const courseBranch = `${r.course_name}-${r.branch_name}`;
+    console.log("🚩 STORED OPTION:", courseBranch);
 
     const option = document.createElement('option');
-    option.value = display;
+    option.value = courseBranch;
     courseList.appendChild(option);
 
     allCoursesData.push({
       id: r.id,
-      courseBranch: display,
-      courseBranchNorm: courseBranchNorm,
+      courseBranch: courseBranch,
       semester: r.semester
     });
   });
+
+  console.log("🚩 FINAL COURSE LIST:", allCoursesData);
 }
+
 
 /* -----------------------
    GENERATE: call backend to generate timetable
@@ -285,8 +287,10 @@ window.handleGenerateTimetable = async function () {
   const courseBranchRaw = (courseBranchInput && courseBranchInput.value) ? courseBranchInput.value : "";
   const semester = semesterInput.value.trim();
 
-  // normalize the user input for robust matching
-  const courseBranchNorm = normalizeCourseBranch(courseBranchRaw);
+  // normalize user input
+  const courseBranchNorm = courseBranchRaw.replace(/\s+/g, '').toLowerCase();
+  console.log("🚩 USER INPUT RAW:", courseBranchRaw);
+  console.log("🚩 USER INPUT NORM:", courseBranchNorm);
 
   // Clear previous UI
   document.getElementById("sectionTabs").innerHTML = "";
@@ -302,11 +306,11 @@ window.handleGenerateTimetable = async function () {
     return;
   }
 
-  // find matching course object (we fetched courseBranch list earlier)
-  await loadAdminOptions(); // refresh cache for safety
+  await loadAdminOptions();
+  console.log("🚩 ALL COURSES FROM SERVER:", allCoursesData);
 
   const matched = allCoursesData.find(c =>
-    (c.courseBranchNorm || normalizeCourseBranch(c.courseBranch)) === courseBranchNorm &&
+    c.courseBranch.replace(/\s+/g, '').toLowerCase() === courseBranchNorm &&
     String(c.semester).trim() === String(semester).trim()
   );
 
@@ -341,6 +345,7 @@ window.handleGenerateTimetable = async function () {
     timetableStatus.textContent = "Network error generating timetable. Make sure backend is running.";
   }
 };
+
 
 /* -----------------------
    Helpers to normalize server timetable format to what UI expects
@@ -547,3 +552,4 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadingIndicator = document.getElementById('loadingIndicator');
   if (loadingIndicator) loadingIndicator.style.display = 'none';
 });
+
