@@ -241,7 +241,7 @@ async function loadAdminOptions() {
 
   const rows = await fetchCoursesFromServer();
   rows.forEach(r => {
-    const courseBranch = `${r.course_name} - ${r.branch_name}`;
+    const courseBranch = `${r.course_name}-${r.branch_name}`;
     const option = document.createElement('option');
     option.value = courseBranch;
     courseList.appendChild(option);
@@ -281,9 +281,11 @@ window.handleGenerateTimetable = async function () {
 
   // find matching course object (we fetched courseBranch list earlier)
   await loadAdminOptions(); // refresh cache for safety
-  const matched = allCoursesData.find(
-    c => c.courseBranch === courseBranch && String(c.semester) === String(semester)
-  );
+const matched = allCoursesData.find(c =>
+  c.courseBranch.trim().toLowerCase() === courseBranch.trim().toLowerCase() &&
+  String(c.semester).trim() === String(semester).trim()
+);
+
   if (!matched) {
     loadingIndicator.style.display = "none";
     timetableStatus.textContent = `Error: No course data found for ${courseBranch}, Semester ${semester}. Make sure HOD saved the course first.`;
@@ -521,4 +523,5 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadingIndicator = document.getElementById('loadingIndicator');
   if (loadingIndicator) loadingIndicator.style.display = 'none';
 });
+
 
