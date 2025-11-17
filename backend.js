@@ -193,27 +193,31 @@ window.finishHOD = async function() {
     teachers: teachers.map(t => ({ name: t.name, email: t.email || "", subjects: t.subjects }))
   };
 
-  try {
+    try {
     const res = await fetch(`${BASE_URL}/api/courses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
     });
+
     const data = await res.json();
-    if (data && data.ok) {
-      lastSavedCourseId = data.courseId;
-      alert("✅ All HOD data saved successfully to database!");
-      resetHODData();
-      await loadAdminOptions(); // refresh admin list immediately
-      showPanel('loginPanel', true);
-    } else {
-      console.error("Save failed:", data);
-      alert("Error saving to server: " + (data.error || "unknown"));
+
+    if (!data.ok) {
+      alert(data.error); // 🔥 shows popup for duplicate code
+      return;
     }
+
+    lastSavedCourseId = data.courseId;
+    alert("✅ All HOD data saved successfully to database!");
+    resetHODData();
+    await loadAdminOptions();
+    showPanel('loginPanel', true);
+
   } catch (err) {
     console.error("Network error saving course:", err);
     alert("Network error saving to backend. Make sure server is running and BASE_URL is correct.");
   }
+
 };
 
 /* -----------------------
@@ -517,3 +521,4 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadingIndicator = document.getElementById('loadingIndicator');
   if (loadingIndicator) loadingIndicator.style.display = 'none';
 });
+
