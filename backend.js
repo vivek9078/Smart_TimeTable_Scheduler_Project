@@ -7,7 +7,7 @@ const BASE_URL = "https://smart-tt-backend.onrender.com"; // <<--- REPLACE with 
 // In-memory UI state
 let subjects = [];
 let teachers = [];
-let allCoursesData = []; // cached list of courses (id, courseBranch, semester)
+let allCoursesData = []; // cached list of courses (id, courseBranch, semester, courseBranchNorm)
 let generatedTimetables = null; // last generated timetable result
 let lastSavedCourseId = null; // id returned by /api/courses after saving
 
@@ -59,6 +59,19 @@ function resetHODData() {
   const adminCourseInput = document.getElementById("adminCourseInput"); if (adminCourseInput) adminCourseInput.value = "";
   const adminSemesterInput = document.getElementById("adminSemesterInput"); if (adminSemesterInput) adminSemesterInput.value = "";
   const ts = document.getElementById('timetableStatus'); if (ts) ts.textContent = "(Enter Course and Semester above and click Generate)";
+}
+
+/* -----------------------
+   Normalization helper (for matching course+branch)
+   ----------------------- */
+function normalizeCourseBranch(str) {
+  if (!str && str !== "") return "";
+  return String(str)
+    .replace(/\s+/g, '')      // remove all whitespace
+    .replace(/-+/g, '-')      // collapse multiple dashes
+    .replace(/_+/g, '_')      // collapse underscores if any
+    .toLowerCase()
+    .trim();
 }
 
 /* -----------------------
@@ -193,7 +206,7 @@ window.finishHOD = async function() {
     teachers: teachers.map(t => ({ name: t.name, email: t.email || "", subjects: t.subjects }))
   };
 
-    try {
+  try {
     const res = await fetch(`${BASE_URL}/api/courses`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -241,13 +254,20 @@ async function loadAdminOptions() {
 
   const rows = await fetchCoursesFromServer();
   rows.forEach(r => {
-    const courseBranch = `${r.course_name}-${r.branch_name}`;
+    // readable display text in datalist option (keeps spaces for readability)
+    const display = `${r.course_name} - ${r.branch_name}`;
+
+    // normalized variant used for matching
+    const courseBranchNorm = normalizeCourseBranch(`${r.course_name}-${r.branch_name}`);
+
     const option = document.createElement('option');
-    option.value = courseBranch;
+    option.value = display;
     courseList.appendChild(option);
+
     allCoursesData.push({
       id: r.id,
-      courseBranch: courseBranch,
+      courseBranch: display,
+      courseBranchNorm: courseBranchNorm,
       semester: r.semester
     });
   });
@@ -262,8 +282,11 @@ window.handleGenerateTimetable = async function () {
   const loadingIndicator = document.getElementById('loadingIndicator');
   const timetableStatus = document.getElementById('timetableStatus');
 
-  const courseBranch = courseBranchInput.value.trim();
+  const courseBranchRaw = (courseBranchInput && courseBranchInput.value) ? courseBranchInput.value : "";
   const semester = semesterInput.value.trim();
+
+  // normalize the user input for robust matching
+  const courseBranchNorm = normalizeCourseBranch(courseBranchRaw);
 
   // Clear previous UI
   document.getElementById("sectionTabs").innerHTML = "";
@@ -273,7 +296,7 @@ window.handleGenerateTimetable = async function () {
     <button class="btn-custom w-100 mt-2" onclick="downloadTeacherTimetable()">⬇ Download Timetable (All Teachers)</button>
   `;
 
-  if (!courseBranch || !semester) {
+  if (!courseBranchRaw || !semester) {
     loadingIndicator.style.display = "none";
     timetableStatus.textContent = "Please enter the Course/Branch and Semester.";
     return;
@@ -281,14 +304,15 @@ window.handleGenerateTimetable = async function () {
 
   // find matching course object (we fetched courseBranch list earlier)
   await loadAdminOptions(); // refresh cache for safety
-const matched = allCoursesData.find(c =>
-  c.courseBranch.trim().toLowerCase() === courseBranch.trim().toLowerCase() &&
-  String(c.semester).trim() === String(semester).trim()
-);
+
+  const matched = allCoursesData.find(c =>
+    (c.courseBranchNorm || normalizeCourseBranch(c.courseBranch)) === courseBranchNorm &&
+    String(c.semester).trim() === String(semester).trim()
+  );
 
   if (!matched) {
     loadingIndicator.style.display = "none";
-    timetableStatus.textContent = `Error: No course data found for ${courseBranch}, Semester ${semester}. Make sure HOD saved the course first.`;
+    timetableStatus.textContent = `Error: No course data found for ${courseBranchRaw}, Semester ${semester}. Make sure HOD saved the course first.`;
     return;
   }
 
@@ -305,7 +329,7 @@ const matched = allCoursesData.find(c =>
     loadingIndicator.style.display = "none";
     if (data && data.ok && data.timetable) {
       generatedTimetables = normalizeServerTimetable(data.timetable);
-      renderTimetablesFromServer(generatedTimetables, courseBranch, semester);
+      renderTimetablesFromServer(generatedTimetables, matched.courseBranch, semester);
       timetableStatus.textContent = `✅ Timetables generated for ${generatedTimetables.sections.length} sections.`;
     } else {
       console.error("Generate failed:", data);
@@ -523,5 +547,3 @@ document.addEventListener('DOMContentLoaded', () => {
   const loadingIndicator = document.getElementById('loadingIndicator');
   if (loadingIndicator) loadingIndicator.style.display = 'none';
 });
-
-
